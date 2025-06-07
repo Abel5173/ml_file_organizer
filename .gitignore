@@ -1,0 +1,10 @@
+.venv
+data/
+model/
+.env
+
+__pycache__/
+*.pyc
+cache.json
+.vscode/
+*.log
