@@ -1,0 +1,32 @@
+paths:
+  downloads: "~/Downloads"
+api:
+  text_model: "facebook/bart-large-mnli"
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  summarization_model: "facebook/bart-large-cnn"
+  vision_model: "google/vit-base-patch16-224"
+  text_limit: 512
+  rate_limit:
+    max_requests_per_hour: 300
+    retry_delay: 60
+base_folders:
+  - name: Documents/PDFs
+    extensions: [".pdf"]
+  - name: Documents/Text
+    extensions: [".txt"]
+  - name: Documents/CSVs
+    extensions: [".csv"]
+  - name: Code
+    extensions: [".cpp", ".py", ".java", ".js"]
+  - name: Images
+    extensions: [".jpg", ".jpeg", ".png", ".gif"]
+  - name: Videos
+    extensions: [".mp4", ".avi", ".mkv"]
+  - name: Music
+    extensions: [".mp3", ".wav", ".flac"]
+  - name: Archives
+    extensions: [".zip", ".tar", ".gz", ".rar"]
+  - name: Executables
+    extensions: [".exe", ".deb", ".rpm"]
+  - name: Miscellaneous
+    extensions: []
