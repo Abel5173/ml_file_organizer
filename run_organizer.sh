@@ -2,10 +2,16 @@
 
 # Script to run ml_file_organizer main.py for batch processing
 
-# Define project directory (adjust if different)
-PROJECT_DIR="$HOME/abel/Projects/ml_file_organizer"
+# Define project directory
+PROJECT_DIR="/mnt/ssd-extra/Projects/ml_file_organizer"
 VENV_DIR="$PROJECT_DIR/.venv"
 LOG_FILE="$PROJECT_DIR/organizer.log"
+
+# Ensure log file exists
+touch "$LOG_FILE" 2>/dev/null || {
+    echo "$(date): ERROR: Cannot create log file $LOG_FILE" >&2
+    exit 1
+}
 
 # Check if project directory exists
 if [ ! -d "$PROJECT_DIR" ]; then
@@ -22,6 +28,12 @@ fi
 # Check if .env file exists
 if [ ! -f "$PROJECT_DIR/.env" ]; then
     echo "$(date): ERROR: .env file not found in $PROJECT_DIR" >> "$LOG_FILE"
+    exit 1
+fi
+
+# Check if main.py exists
+if [ ! -f "$PROJECT_DIR/main.py" ]; then
+    echo "$(date): ERROR: main.py not found in $PROJECT_DIR" >> "$LOG_FILE"
     exit 1
 fi
 
@@ -51,5 +63,3 @@ fi
 
 # Deactivate virtual environment
 deactivate
-
-exit $EXIT_CODE

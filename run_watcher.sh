@@ -2,11 +2,17 @@
 
 # Script to run ml_file_organizer watcher.py for real-time monitoring
 
-# Define project directory (adjust if different)
-PROJECT_DIR="$HOME/abel/Projects/ml_file_organizer"
+# Define project directory
+PROJECT_DIR="/mnt/ssd-extra/Projects/ml_file_organizer"
 VENV_DIR="$PROJECT_DIR/.venv"
 LOG_FILE="$PROJECT_DIR/watcher.log"
 PID_FILE="$PROJECT_DIR/watcher.pid"
+
+# Ensure log file exists
+touch "$LOG_FILE" 2>/dev/null || {
+    echo "$(date): ERROR: Cannot create log file $LOG_FILE" >&2
+    exit 1
+}
 
 # Check if project directory exists
 if [ ! -d "$PROJECT_DIR" ]; then
@@ -26,6 +32,12 @@ if [ ! -f "$PROJECT_DIR/.env" ]; then
     exit 1
 fi
 
+# Check if watcher.py exists
+if [ ! -f "$PROJECT_DIR/watcher.py" ]; then
+    echo "$(date): ERROR: watcher.py not found in $PROJECT_DIR" >> "$LOG_FILE"
+    exit 1
+fi
+
 # Check if watcher is already running
 if [ -f "$PID_FILE" ]; then
     PID=$(cat "$PID_FILE")
@@ -34,7 +46,7 @@ if [ -f "$PID_FILE" ]; then
         exit 0
     else
         echo "$(date): Stale PID file found, removing" >> "$LOG_FILE"
-        rm "$PID_FILE"
+        rm -f "$PID_FILE"
     fi
 fi
 
@@ -62,7 +74,7 @@ if ps -p "$PID" > /dev/null; then
     echo "$(date): Watcher started successfully with PID $PID" >> "$LOG_FILE"
 else
     echo "$(date): ERROR: Watcher failed to start" >> "$LOG_FILE"
-    rm "$PID_FILE"
+    rm -f "$PID_FILE"
     exit 1
 fi
 

@@ -1,12 +1,13 @@
-import time
-import requests
-from utils.cache import get_cached_category, cache_category, load_cache, save_cache
-from utils.api import image_classification
-from utils.extract import extract_pdf_text, extract_csv_text, extract_image_text, extract_code_text, extract_keywords, get_text_embedding
-from sklearn.cluster import KMeans
-import numpy as np
-import os
 import mimetypes
+import os
+import numpy as np
+from sklearn.cluster import KMeans
+from utils.extract import extract_pdf_text, extract_csv_text, extract_image_text, extract_code_text, extract_keywords, get_text_embedding
+from utils.api import image_classification
+from utils.cache import get_cached_category, cache_category, load_cache, save_cache
+import requests
+import time
+
 
 def summarize_text(text, token, model_name, config):
     """Generate a topic name via summarization."""
@@ -44,7 +45,7 @@ def summarize_text(text, token, model_name, config):
 
 
 def infer_folder_name(text, token, config, base_folder, file_path):
-    """Infer subfolder by clustering embeddings and summarizing topics."""
+    """Infer subfolder by clustering embeddings and summarizing topics, with keyword fallback."""
     cache = load_cache()
     embeddings = cache.get("embeddings", {})
     topics = cache.get("topics", {})
@@ -53,6 +54,24 @@ def infer_folder_name(text, token, config, base_folder, file_path):
     embedding = get_text_embedding(
         text, token, config["api"]["embedding_model"], config)
     if embedding is None:
+        # Fallback: Use keywords
+        keywords = extract_keywords(text)
+        keyword_mappings = {
+            "javascript": "Web Development",
+            "html": "Web Development",
+            "css": "Web Development",
+            "python": "Python",
+            "cpp": "C++",
+            "include": "C++",
+            "java": "Java",
+            "data": "Data Analysis",
+            "analysis": "Data Analysis",
+            "machine": "Machine Learning",
+            "learning": "Machine Learning"
+        }
+        for keyword in keywords:
+            if keyword.lower() in keyword_mappings:
+                return keyword_mappings[keyword.lower()]
         return "Others"
 
     # Store embedding
@@ -91,7 +110,7 @@ def infer_folder_name(text, token, config, base_folder, file_path):
                 return topic
 
     # New topic: summarize representative text
-    representative_text = text  # Use current file's text
+    representative_text = text
     topic = summarize_text(representative_text, token,
                            config["api"]["summarization_model"], config)
     topics[topic] = cluster_files + [file_hash]
@@ -140,7 +159,7 @@ def classify_file(file_path, token, config, downloads_dir):
             subfolder = infer_folder_name(
                 text, token, config, base_folder, file_path)
     elif base_folder in ["Videos", "Music", "Archives", "Executables"]:
-        subfolder = "General"  # Default for non-text files
+        subfolder = "General"
 
     # Create subfolder and cache result
     category = f"{base_folder}/{subfolder}"
@@ -158,5 +177,3 @@ def get_file_hash(file_path):
         for chunk in iter(lambda: f.read(4096), b""):
             hasher.update(chunk)
     return hasher.hexdigest()
-
-

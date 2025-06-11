@@ -1,11 +1,14 @@
-import numpy as np
-import requests
-import re
-from collections import Counter
-from PIL import Image
-import pytesseract
-import pandas as pd
+import time
 import pdfplumber
+import pandas as pd
+import pytesseract
+from PIL import Image
+from collections import Counter
+import re
+import requests
+import numpy as np
+import json
+
 
 def extract_pdf_text(file_path):
     try:
@@ -57,28 +60,42 @@ def extract_keywords(text, limit=5):
 def get_text_embedding(text, token, model_name, config):
     """Get text embedding via Hugging Face API."""
     retry_delay = config["api"]["rate_limit"]["retry_delay"]
+    if not text:
+        print("Embedding error: Empty text input")
+        return None
+
+    # Truncate text to API limit
+    text = text[:config["api"]["text_limit"]]
+
     for attempt in range(3):
         try:
             headers = {"Authorization": f"Bearer {token}"}
-            payload = {"inputs": text[:config["api"]["text_limit"]]}
+            payload = {"inputs": text}
+            print(
+                f"Attempt {attempt + 1}: Sending embedding request for text: {text[:50]}...")
             response = requests.post(
                 f"https://api-inference.huggingface.co/models/{model_name}",
                 headers=headers,
                 json=payload
             )
             response.raise_for_status()
-            return np.array(response.json())
+            result = response.json()
+            print(
+                f"Embedding response: {json.dumps(result, indent=2)[:100]}...")
+            if isinstance(result, list) and len(result) > 0:
+                return np.array(result)
+            else:
+                print(f"Unexpected response format: {result}")
+                return None
         except requests.exceptions.HTTPError as e:
+            print(f"Embedding HTTP error: {e}, Response: {e.response.text}")
             if e.response.status_code == 429:
                 print(f"Rate limit hit, retrying in {retry_delay} seconds...")
                 time.sleep(retry_delay)
                 continue
-            print(f"Embedding error: {e}")
             return None
         except Exception as e:
             print(f"Embedding error: {e}")
             return None
     print("Max retries reached for embedding")
     return None
-
-
